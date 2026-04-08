@@ -1,0 +1,3 @@
+[submodule "glitter"]
+	path = glitter
+	url = git@github.com:Polytonic/Glitter.git
