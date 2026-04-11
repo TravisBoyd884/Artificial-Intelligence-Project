@@ -2,11 +2,14 @@
 
 out vec4 FragColor;
 in vec4 vertexColor;
+in vec2 TexCoord;
+
+uniform sampler2D ourTexture;
 
 uniform float sineTime;
 
 void main()
 {
- FragColor = vec4(vertexColor.xyz * sineTime, 1.0f);
+ FragColor = texture(ourTexture, TexCoord) * sineTime * vertexColor;
 }
 
