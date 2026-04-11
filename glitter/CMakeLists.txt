@@ -45,8 +45,8 @@ endif()
 # Project Sources
 # -----------------------------
 # Headers and source files
-file(GLOB PROJECT_HEADERS Glitter/Headers/*.hpp)
-file(GLOB PROJECT_SOURCES Glitter/Sources/*.cpp)
+file(GLOB_RECURSE PROJECT_HEADERS Glitter/Headers/*.hpp)
+file(GLOB_RECURSE PROJECT_SOURCES Glitter/Sources/*.cpp)
 file(GLOB VENDORS_SOURCES Glitter/Vendor/glad/src/glad.c)
 file(GLOB PROJECT_SHADERS Glitter/Shaders/*.comp
                           Glitter/Shaders/*.frag

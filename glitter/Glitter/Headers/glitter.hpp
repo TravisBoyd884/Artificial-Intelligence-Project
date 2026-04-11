@@ -13,7 +13,12 @@
 // Reference: https://github.com/nothings/stb/blob/master/stb_image.h#L4
 // To use stb_image, add this in *one* C++ source file.
 //     #define STB_IMAGE_IMPLEMENTATION
+#include "Window/window.hpp"
 #include <stb_image.h>
+
+// Standard headers
+#include <cstdio>
+#include <cstdlib>
 
 // Define Some Constants
 const int mWidth = 800;
