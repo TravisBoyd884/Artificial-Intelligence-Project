@@ -1,5 +1,4 @@
 #include "Window/window.hpp"
-#include "GLFW/glfw3.h"
 
 Window::Window(int screenWidth, int screenHeight) {
   init_GLFW();

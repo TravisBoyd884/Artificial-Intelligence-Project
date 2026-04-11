@@ -1,62 +1,14 @@
 // Local Headers
+#include "GLFW/glfw3.h"
+#include "Rendering/shader.hpp"
 #include "glitter.hpp"
 
-// System Headers
 int main() {
 
   Window window(800, 600);
 
-  const char *vertexShaderSource =
-      "#version 330 core\n"
-      "layout (location = 0) in vec3 aPos;\n"
-      "void main()\n"
-      "{\n"
-      " gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0f);\n"
-      "}\0";
-
-  const char *fragmentShaderSource =
-      "#version 330 core\n"
-      "out vec4 FragColor;\n"
-      "void main()\n"
-      "{\n"
-      " FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-      "}\0";
-
-  unsigned int vertexShader;
-  vertexShader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-  glCompileShader(vertexShader);
-  int success;
-  char infoLog[512];
-  glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-    fprintf(stderr, "vertexShader Compilation failed: %s\n", infoLog);
-  }
-
-  unsigned int fragmentShader;
-  fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-  glCompileShader(fragmentShader);
-  glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-  if (!success) {
-    glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-    fprintf(stderr, "fragmentShader Compilation failed: %s\n", infoLog);
-  }
-
-  unsigned int shaderProgram;
-  shaderProgram = glCreateProgram();
-  glAttachShader(shaderProgram, vertexShader);
-  glAttachShader(shaderProgram, fragmentShader);
-  glLinkProgram(shaderProgram);
-
-  glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-  if (!success) {
-    glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-    fprintf(stderr, "shaderProgram Compilation failed: %s\n", infoLog);
-  }
-  glDeleteShader(vertexShader);
-  glDeleteShader(fragmentShader);
+  Shader ourShader(PROJECT_SOURCE_DIR "/Glitter/Shaders/shader.vs",
+                   PROJECT_SOURCE_DIR "/Glitter/Shaders/shader.fs");
 
   float vertices[] = {
       -0.5f, -0.5f, 0.0f, // 0 bottom left
@@ -92,13 +44,17 @@ int main() {
   while (glfwWindowShouldClose(window) == false) {
     window.handle_input();
 
-    glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    float time = glfwGetTime();
+    float timeValue = (sin(time * 3) / 4.0f) + 0.75f;
 
     // Background Fill Color
-    glUseProgram(shaderProgram);
+    ourShader.use();
+    ourShader.setFloat("sineTime", timeValue);
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    // glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
 
     // Flip Buffers and Draw
