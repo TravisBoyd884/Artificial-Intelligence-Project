@@ -1,0 +1,20 @@
+{
+  "name": "low_complexity",
+  "complexityLevel": "low",
+
+  "textures": {
+    "floor":   "",
+    "wall":    "",
+    "ceiling": ""
+  },
+
+  "lighting": {
+    "ambient": 0.15,
+    "dirLight": {
+      "direction": [-0.3, -1.0, -0.5],
+      "color":     [1.0, 1.0, 1.0],
+      "intensity": 1.0
+    },
+    "pointLights": []
+  }
+}

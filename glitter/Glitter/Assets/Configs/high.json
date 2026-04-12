@@ -1,0 +1,24 @@
+{
+  "name": "high_complexity",
+  "complexityLevel": "high",
+
+  "textures": {
+    "floor":   "parquet_floor.jpg",
+    "wall":    "brick_wall.jpg",
+    "ceiling": "plaster_ceiling.jpg"
+  },
+
+  "lighting": {
+    "ambient": 0.3,
+    "dirLight": {
+      "direction": [-0.2, -1.0, -0.3],
+      "color":     [1.0, 0.9, 0.8],
+      "intensity": 0.8
+    },
+    "pointLights": [
+      { "position": [-4.0, 5.0,  0.0], "color": [1.0, 0.85, 0.6], "intensity": 2.0 },
+      { "position": [ 4.0, 5.0,  0.0], "color": [0.7, 0.85, 1.0], "intensity": 2.0 },
+      { "position": [ 0.0, 5.0, -4.0], "color": [1.0, 1.0,  0.8], "intensity": 1.5 }
+    ]
+  }
+}
