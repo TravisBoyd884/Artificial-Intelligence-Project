@@ -26,6 +26,8 @@ public:
 
   glm::vec3 getPosition() const { return m_position; }
   float     getZoom()     const { return m_zoom; }
+  float     getYaw()      const { return m_yaw; }
+  float     getPitch()    const { return m_pitch; }
 
   // direction  — which way to move
   // deltaTime  — seconds since last frame (keeps speed frame-rate independent)
