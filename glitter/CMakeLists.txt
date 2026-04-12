@@ -86,6 +86,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     Glitter/Vendor/glfw/include/
     Glitter/Vendor/glm/
     Glitter/Vendor/stb/
+    Glitter/Vendor/nlohmann/
 )
 
 # -----------------------------
