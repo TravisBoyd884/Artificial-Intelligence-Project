@@ -1,100 +1,159 @@
-// Local Headers
-#include "GLFW/glfw3.h"
-#include "Rendering/shader.hpp"
 #include "glitter.hpp"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "Camera/camera.hpp"
+#include "Rendering/shader.hpp"
+#include "Rendering/model.hpp"
 
-int main() {
+// ---------------------------------------------------------------------------
+// Test scene geometry — a simple lit floor plane.
+// Replace (or supplement) this with Model objects once you have .glb exports
+// from Blender.
+//
+// Layout: position(3) | normal(3) | texCoords(2)
+// ---------------------------------------------------------------------------
+static const float kFloorVertices[] = {
+  // position              normal             texcoords
+  -5.0f, 0.0f, -5.0f,   0.0f, 1.0f, 0.0f,  0.0f, 5.0f,
+   5.0f, 0.0f, -5.0f,   0.0f, 1.0f, 0.0f,  5.0f, 5.0f,
+   5.0f, 0.0f,  5.0f,   0.0f, 1.0f, 0.0f,  5.0f, 0.0f,
+  -5.0f, 0.0f,  5.0f,   0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+};
+static const unsigned int kFloorIndices[] = { 0, 1, 2,  2, 3, 0 };
 
-  Window window(800, 600);
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-  Shader ourShader(PROJECT_SOURCE_DIR "/Glitter/Shaders/shader.vs",
-                   PROJECT_SOURCE_DIR "/Glitter/Shaders/shader.fs");
-
-  float vertices[] = {
-      // positions          // colors           // texture coords
-      0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, // top right
-      0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, // bottom right
-      -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, // bottom left
-      -0.5f, 0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f  // top left
-  };
-
-  unsigned int indices[] = {
-      1, 0, 3, //
-      1, 2, 3  //
-  };
-
-  unsigned int VAO;
+static unsigned int buildFloorVAO() {
+  unsigned int VAO, VBO, EBO;
   glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glGenBuffers(1, &EBO);
+
   glBindVertexArray(VAO);
 
-  unsigned int VBO;
-  glGenBuffers(1, &VBO);
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(kFloorVertices), kFloorVertices, GL_STATIC_DRAW);
 
-  unsigned int EBO;
-  glGenBuffers(1, &EBO);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices,
-               GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(kFloorIndices), kFloorIndices, GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *)0);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                        (void *)(3 * sizeof(float)));
-  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float),
-                        (void *)(6 * sizeof(float)));
-
+  // position
   glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(0));
+  // normal
   glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
+  // texcoords
   glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), reinterpret_cast<void *>(6 * sizeof(float)));
 
-  unsigned int texture;
-  glGenTextures(1, &texture);
-  glBindTexture(GL_TEXTURE_2D, texture);
-  // repeating for x and y axis respectively
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glBindVertexArray(0);
+  return VAO;
+}
 
-  // mimmap filter for minimization and linear linear for magnifcation
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR);
+// A 1×1 solid-color texture so the floor renders even without an image file.
+static unsigned int buildSolidTexture(unsigned char r, unsigned char g, unsigned char b) {
+  unsigned char pixel[] = {r, g, b};
+  unsigned int texID;
+  glGenTextures(1, &texID);
+  glBindTexture(GL_TEXTURE_2D, texID);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, pixel);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  return texID;
+}
 
-  int width, height, nrChannels;
+// ---------------------------------------------------------------------------
+// main
+// ---------------------------------------------------------------------------
 
-  unsigned char *data =
-      stbi_load(PROJECT_SOURCE_DIR "/Glitter/Textures/wall.jpg", &width, &height, &nrChannels, 0);
+int main() {
+  const int kWidth  = 1280;
+  const int kHeight = 720;
 
-  if (data) {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
-                 GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-  } else {
-    std::cout << "Failed to load texture" << std::endl;
-  }
-  stbi_image_free(data);
-  // Rendering Loop
+  Window window(kWidth, kHeight);
+  window.captureMouse();
+
+  Camera camera(glm::vec3(0.0f, 1.5f, 5.0f));
+
+  Shader sceneShader(PROJECT_SOURCE_DIR "/Glitter/Shaders/scene.vs",
+                     PROJECT_SOURCE_DIR "/Glitter/Shaders/scene.fs");
+
+  unsigned int floorVAO    = buildFloorVAO();
+  unsigned int floorTex    = buildSolidTexture(180, 170, 160); // warm grey
+
+  // --- To load a Blender model, uncomment and adjust the path: ---
+  // Model sceneModel(PROJECT_SOURCE_DIR "/Glitter/Assets/scene.glb");
+  // Model agentModel(PROJECT_SOURCE_DIR "/Glitter/Assets/agent.glb");
+
+  glEnable(GL_DEPTH_TEST);
+
+  const glm::mat4 projection = glm::perspective(
+    glm::radians(camera.getZoom()),
+    static_cast<float>(kWidth) / static_cast<float>(kHeight),
+    0.1f, 100.0f);
+
+  float lastTime = 0.0f;
+
   while (glfwWindowShouldClose(window) == false) {
+    float currentTime = static_cast<float>(glfwGetTime());
+    float deltaTime   = currentTime - lastTime;
+    lastTime          = currentTime;
+
+    // --- Input ---
     window.handle_input();
 
-    glClearColor(0.25f, 0.25f, 0.25f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    float time = glfwGetTime();
-    float timeValue = (sin(time * 3) / 4.0f) + 0.75f;
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+      camera.processKeyboard(CameraMovement::FORWARD,  deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+      camera.processKeyboard(CameraMovement::BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+      camera.processKeyboard(CameraMovement::LEFT,     deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+      camera.processKeyboard(CameraMovement::RIGHT,    deltaTime);
 
-    // Background Fill Color
-    ourShader.use();
-    ourShader.setFloat("sineTime", timeValue);
-    glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-    // glDrawArrays(GL_TRIANGLES, 0, 3);
+    glm::vec2 mouseDelta = window.getMouseDelta();
+    camera.processMouseMovement(mouseDelta.x, mouseDelta.y);
+
+    // --- Render ---
+    glClearColor(0.15f, 0.15f, 0.2f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    sceneShader.use();
+
+    glm::mat4 view      = camera.getViewMatrix();
+    glm::mat4 modelMat  = glm::mat4(1.0f);
+    glm::mat3 normalMat = glm::mat3(glm::transpose(glm::inverse(modelMat)));
+
+    sceneShader.setMat4("projection",  projection);
+    sceneShader.setMat4("view",        view);
+    sceneShader.setMat4("model",       modelMat);
+    sceneShader.setMat3("normalMatrix",normalMat);
+    sceneShader.setVec3("viewPos",     camera.getPosition());
+    sceneShader.setVec3("light.direction", glm::vec3(-0.3f, -1.0f, -0.5f));
+    sceneShader.setVec3("light.color",     glm::vec3(1.0f,  1.0f,  1.0f));
+
+    // Draw floor
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, floorTex);
+    sceneShader.setInt("texture_diffuse0", 0);
+    glBindVertexArray(floorVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 
-    // Flip Buffers and Draw
+    // --- Draw models (once assets are available) ---
+    // sceneShader.setMat4("model", glm::mat4(1.0f));
+    // sceneShader.setMat3("normalMatrix", glm::mat3(1.0f));
+    // sceneModel.draw(sceneShader);
+    //
+    // glm::mat4 agentTransform = glm::translate(glm::mat4(1.0f), agentPosition);
+    // sceneShader.setMat4("model", agentTransform);
+    // sceneShader.setMat3("normalMatrix", glm::mat3(glm::transpose(glm::inverse(agentTransform))));
+    // agentModel.draw(sceneShader);
+
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
+
   return EXIT_SUCCESS;
 }
