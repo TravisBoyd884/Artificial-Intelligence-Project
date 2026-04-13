@@ -3,6 +3,9 @@
 #include "Rendering/shader.hpp"
 #include "Scene/scene_config.hpp"
 #include "Scene/primitive_builder.hpp"
+#include "Game/game.hpp"
+
+#include <algorithm>
 
 static void applyLighting(const Shader& shader, const SceneConfig& cfg) {
   shader.setFloat("ambientIntensity", cfg.ambientIntensity);
@@ -81,6 +84,8 @@ int main(int argc, char** argv) {
   Mesh hoop      = PrimitiveBuilder::buildHoop     (glm::vec3(0.0f, 3.0f, -5.0f), 0.23f, 0.025f, 24, hoopTex);
   Mesh ball      = PrimitiveBuilder::buildSphere   (0.12f, 16, 16, ballTex);
 
+  Game game;
+
   glEnable(GL_DEPTH_TEST);
 
   const glm::mat4 projection = glm::perspective(
@@ -88,11 +93,13 @@ int main(int argc, char** argv) {
       static_cast<float>(kWidth) / static_cast<float>(kHeight),
       0.1f, 100.0f);
 
-  float lastTime = 0.0f;
+  float lastTime   = 0.0f;
+  bool  spacePrev  = false;
+  bool  rPrev      = false;
 
   while (glfwWindowShouldClose(window) == false) {
     float currentTime = static_cast<float>(glfwGetTime());
-    float deltaTime   = currentTime - lastTime;
+    float deltaTime   = std::min(currentTime - lastTime, 0.1f);
     lastTime          = currentTime;
 
     window.handle_input();
@@ -109,6 +116,20 @@ int main(int argc, char** argv) {
     glm::vec2 mouseDelta = window.getMouseDelta();
     camera.processMouseMovement(mouseDelta.x, mouseDelta.y);
 
+    bool spaceNow = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
+    bool rNow     = glfwGetKey(window, GLFW_KEY_R)     == GLFW_PRESS;
+
+    if (spaceNow && !spacePrev && game.getState() == GameState::IDLE)
+      game.shoot(camera.getYaw(), 25.0f, 15.0f);
+
+    if (rNow && !rPrev)
+      game.reset();
+
+    spacePrev = spaceNow;
+    rPrev     = rNow;
+
+    game.update(deltaTime);
+
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -124,7 +145,9 @@ int main(int argc, char** argv) {
     drawMesh(sceneShader, ceiling,   identity);
     drawMesh(sceneShader, backboard, identity);
     drawMesh(sceneShader, hoop,      identity);
-    drawMesh(sceneShader, ball,      glm::translate(identity, glm::vec3(0.0f, 1.2f, 4.5f)));
+
+    glm::mat4 ballTransform = glm::translate(identity, game.getBallPosition());
+    drawMesh(sceneShader, ball, ballTransform);
 
     glfwSwapBuffers(window);
     glfwPollEvents();
