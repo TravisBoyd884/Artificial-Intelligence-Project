@@ -54,9 +54,9 @@ int main(int argc, char** argv) {
   Window window(kWidth, kHeight);
   window.captureMouse();
 
-  Camera camera(glm::vec3(0.0f, 1.5f, 4.5f),
+  Camera camera(glm::vec3(0.0f, 1.8f, 5.5f),
                 glm::vec3(0.0f, 1.0f, 0.0f),
-                -90.0f, 0.0f);
+                -90.0f, -5.0f);
 
   Shader sceneShader(PROJECT_SOURCE_DIR "/Glitter/Shaders/scene.vs",
                      PROJECT_SOURCE_DIR "/Glitter/Shaders/scene.fs");

@@ -19,12 +19,12 @@ Game::Game() {
 }
 
 void Game::setupStaticBodies() {
-    m_physics.addStaticPlane(glm::vec3( 0,  1,  0), 0.0f)->setRestitution(0.4f); // floor
-    m_physics.addStaticPlane(glm::vec3( 0, -1,  0), 6.0f)->setRestitution(0.2f); // ceiling
-    m_physics.addStaticPlane(glm::vec3( 0,  0, -1), 6.0f)->setRestitution(0.3f); // front wall  (+Z)
-    m_physics.addStaticPlane(glm::vec3( 0,  0,  1), 6.0f)->setRestitution(0.3f); // back wall   (-Z)
-    m_physics.addStaticPlane(glm::vec3( 1,  0,  0), 6.0f)->setRestitution(0.3f); // left wall   (-X)
-    m_physics.addStaticPlane(glm::vec3(-1,  0,  0), 6.0f)->setRestitution(0.3f); // right wall  (+X)
+    m_physics.addStaticPlane(glm::vec3( 0,  1,  0),  0.0f)->setRestitution(0.4f); // floor
+    m_physics.addStaticPlane(glm::vec3( 0, -1,  0), -6.0f)->setRestitution(0.2f); // ceiling
+    m_physics.addStaticPlane(glm::vec3( 0,  0, -1), -6.0f)->setRestitution(0.3f); // front wall  (+Z)
+    m_physics.addStaticPlane(glm::vec3( 0,  0,  1), -6.0f)->setRestitution(0.3f); // back wall   (-Z)
+    m_physics.addStaticPlane(glm::vec3( 1,  0,  0), -6.0f)->setRestitution(0.3f); // left wall   (-X)
+    m_physics.addStaticPlane(glm::vec3(-1,  0,  0), -6.0f)->setRestitution(0.3f); // right wall  (+X)
     m_physics.addStaticBox(glm::vec3(0.915f, 0.535f, 0.05f),
                            glm::vec3(0.0f, 3.4f, -5.1f))->setRestitution(0.5f);  // backboard
 }
