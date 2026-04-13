@@ -8,26 +8,25 @@ enum class CameraMovement { FORWARD, BACKWARD, LEFT, RIGHT };
 class Camera {
 public:
   // Sensible defaults for a first-person camera.
-  static constexpr float DEFAULT_SPEED       = 2.5f;
-  static constexpr float DEFAULT_SENSITIVITY = 0.1f;
-  static constexpr float DEFAULT_ZOOM        = 45.0f;
+  static constexpr float DEFAULT_SPEED = 2.5f;
+  static constexpr float DEFAULT_SENSITIVITY = 0.05f;
+  static constexpr float DEFAULT_ZOOM = 45.0f;
 
   // position   — starting world position
   // worldUp    — the scene's up axis (almost always +Y)
-  // yaw        — horizontal rotation in degrees (-90 faces -Z, the OpenGL default)
-  // pitch      — vertical rotation in degrees
-  Camera(glm::vec3 position  = glm::vec3(0.0f, 0.0f, 3.0f),
-         glm::vec3 worldUp   = glm::vec3(0.0f, 1.0f, 0.0f),
-         float     yaw       = -90.0f,
-         float     pitch     = 0.0f);
+  // yaw        — horizontal rotation in degrees (-90 faces -Z, the OpenGL
+  // default) pitch      — vertical rotation in degrees
+  Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f),
+         glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = -90.0f,
+         float pitch = 0.0f);
 
   // Returns the view matrix computed from the current position and orientation.
   glm::mat4 getViewMatrix() const;
 
   glm::vec3 getPosition() const { return m_position; }
-  float     getZoom()     const { return m_zoom; }
-  float     getYaw()      const { return m_yaw; }
-  float     getPitch()    const { return m_pitch; }
+  float getZoom() const { return m_zoom; }
+  float getYaw() const { return m_yaw; }
+  float getPitch() const { return m_pitch; }
 
   // direction  — which way to move
   // deltaTime  — seconds since last frame (keeps speed frame-rate independent)
