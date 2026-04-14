@@ -4,7 +4,6 @@
 #include <cmath>
 
 namespace {
-    const glm::vec3 kBallStart (0.0f, 1.2f,  4.5f);
     const glm::vec3 kHoopCentre(0.0f, 3.0f, -5.0f);
     constexpr float kHoopRadius = 0.23f;
     constexpr float kBallRadius = 0.12f;
@@ -12,10 +11,16 @@ namespace {
     constexpr float kMaxTime    = 6.0f;
 }
 
-Game::Game() {
+Game::Game()
+    : m_net(kHoopCentre, kHoopRadius),
+      m_rng(std::random_device{}()) {
     setupStaticBodies();
-    m_ballBody  = m_physics.addDynamicSphere(kBallRadius, kBallMass, kBallStart);
-    m_prevBallY = kBallStart.y;
+    m_ballBody  = m_physics.addDynamicSphere(kBallRadius, kBallMass, m_ballStart);
+    m_prevBallY = m_ballStart.y;
+}
+
+glm::vec3 Game::randomStart() {
+    return glm::vec3(m_distX(m_rng), m_distY(m_rng), m_distZ(m_rng));
 }
 
 void Game::setupStaticBodies() {
@@ -27,6 +32,7 @@ void Game::setupStaticBodies() {
     m_physics.addStaticPlane(glm::vec3(-1,  0,  0), -6.0f)->setRestitution(0.3f); // right wall  (+X)
     m_physics.addStaticBox(glm::vec3(0.915f, 0.535f, 0.05f),
                            glm::vec3(0.0f, 3.4f, -5.1f))->setRestitution(0.5f);  // backboard
+    m_physics.addStaticRim(kHoopCentre, kHoopRadius, 0.025f)->setRestitution(0.7f);  // rim
 }
 
 void Game::shoot(float yaw, float pitch, float power) {
@@ -42,10 +48,11 @@ void Game::shoot(float yaw, float pitch, float power) {
         btVector3(dir.x * power, dir.y * power, dir.z * power));
     m_ballBody->activate(true);
 
-    m_state       = GameState::IN_FLIGHT;
-    m_episodeTime = 0.0f;
-    m_reward      = 0.0f;
-    m_prevBallY   = kBallStart.y;
+    m_state         = GameState::IN_FLIGHT;
+    m_episodeTime   = 0.0f;
+    m_reward        = 0.0f;
+    m_prevBallY     = m_ballStart.y;
+    m_minDistToHoop = glm::length(m_ballStart - kHoopCentre);
 }
 
 void Game::update(float deltaTime) {
@@ -53,6 +60,7 @@ void Game::update(float deltaTime) {
 
     m_physics.step(deltaTime);
     m_episodeTime += deltaTime;
+    m_net.update(deltaTime, getBallPosition(), kBallRadius);
     checkOutcome();
 }
 
@@ -64,9 +72,12 @@ glm::vec3 Game::getBallPosition() const {
 }
 
 void Game::reset() {
+    static const glm::vec3 kDefaultStart(0.0f, 1.2f, 4.5f);
+    m_ballStart = m_fixedSpawn ? kDefaultStart : randomStart();
+
     btTransform t;
     t.setIdentity();
-    t.setOrigin(btVector3(kBallStart.x, kBallStart.y, kBallStart.z));
+    t.setOrigin(btVector3(m_ballStart.x, m_ballStart.y, m_ballStart.z));
     m_ballBody->setWorldTransform(t);
     m_ballBody->getMotionState()->setWorldTransform(t);
     m_ballBody->clearForces();
@@ -74,17 +85,20 @@ void Game::reset() {
     m_ballBody->setAngularVelocity(btVector3(0, 0, 0));
     m_ballBody->activate(true);
 
-    m_state       = GameState::IDLE;
-    m_reward      = 0.0f;
-    m_episodeTime = 0.0f;
-    m_prevBallY   = kBallStart.y;
+    m_state         = GameState::IDLE;
+    m_reward        = 0.0f;
+    m_episodeTime   = 0.0f;
+    m_prevBallY     = m_ballStart.y;
+    m_minDistToHoop = 0.0f;
+    m_net.reset();
 }
 
 void Game::checkOutcome() {
-    glm::vec3 pos = getBallPosition();
+    glm::vec3 pos  = getBallPosition();
+    float     dist = glm::length(pos - kHoopCentre);
 
-    float dist = glm::length(pos - kHoopCentre);
-    m_reward = 0.01f / (1.0f + dist);
+    if (dist < m_minDistToHoop)
+        m_minDistToHoop = dist;
 
     if (m_prevBallY > kHoopCentre.y && pos.y <= kHoopCentre.y) {
         float dx = pos.x - kHoopCentre.x;
@@ -99,7 +113,7 @@ void Game::checkOutcome() {
 
     if (pos.y <= kBallRadius + 0.01f || m_episodeTime >= kMaxTime) {
         m_state  = GameState::MISSED;
-        m_reward = -0.1f;
+        m_reward = -1.0f + 1.0f / (1.0f + m_minDistToHoop);
         m_prevBallY = pos.y;
         return;
     }
