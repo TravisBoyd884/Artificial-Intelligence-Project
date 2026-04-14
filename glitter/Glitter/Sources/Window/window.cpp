@@ -8,7 +8,11 @@ Window::Window(int screenWidth, int screenHeight) {
   glfwMakeContextCurrent(m_Window);
   gladLoadGL();
   fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
-  glViewport(0, 0, m_screenWidth, m_screenHeight);
+  // Use the actual framebuffer dimensions — these differ from the logical
+  // window size on HiDPI displays and when a WM resizes the window on creation.
+  int fbW, fbH;
+  glfwGetFramebufferSize(m_Window, &fbW, &fbH);
+  glViewport(0, 0, fbW, fbH);
   glfwSetFramebufferSizeCallback(m_Window, framebuffer_size_callback);
 }
 
