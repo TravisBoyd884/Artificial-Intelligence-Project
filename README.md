@@ -2,6 +2,10 @@
 
 This is a basketball simulator used to see how visual scene complexity affects reinforcement learning. A PPO agent learns to shoot from random positions by reading an 84x84 RBG image of the scene. There are low medium and high configurations for the scene which map to complexity of the scene.
 
+## Here is my video demo link
+
+https://youtu.be/e7IRUYaAVmM
+
 ## Dependencies
 
 **C++**
