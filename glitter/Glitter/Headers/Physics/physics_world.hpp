@@ -13,6 +13,8 @@ public:
 
     btRigidBody* addStaticPlane  (glm::vec3 normal, float planeConstant);
     btRigidBody* addStaticBox    (glm::vec3 halfExtents, glm::vec3 position);
+    btRigidBody* addStaticRim    (glm::vec3 center, float ringRadius,
+                                  float tubeRadius, int segments = 16);
     btRigidBody* addDynamicSphere(float radius, float mass, glm::vec3 position,
                                   float restitution = 0.76f, float friction = 0.8f);
 
