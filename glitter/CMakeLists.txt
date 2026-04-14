@@ -19,6 +19,7 @@ add_subdirectory(Glitter/Vendor/glfw)
 option(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
 option(ASSIMP_BUILD_SAMPLES OFF)
 option(ASSIMP_BUILD_TESTS OFF)
+option(ASSIMP_WARNINGS_AS_ERRORS OFF)
 add_subdirectory(Glitter/Vendor/assimp)
 
 # Bullet
